@@ -201,6 +201,9 @@ pmpy = pmrt.Clone()
 pmpy.Replace(LINKFLAGS = '')
 
 # #####################################################################
+rt.Program('cache_cost', 'bin/cache_cost.c')
+
+# #####################################################################
 # Preemption and migration overhead analysis
 
 pmrt.Program('pm_task', ['bin/pm_task.c', 'bin/pm_common.c'])
