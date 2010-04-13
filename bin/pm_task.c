@@ -107,6 +107,7 @@ int main(int argc, char **argv)
 	saved_ctrl_page_ptr = ctrl;
 #endif
 
+	iopl(3);
 	/* Enter loop that measures preemption and migration costs. */
 	while (curr_job_count * task_period < SIMRUNTIME) {
 #ifdef DEBUG
@@ -118,6 +119,9 @@ int main(int argc, char **argv)
 		}
 #endif
 		if (curr_job_count != ctrl->job_count) {
+
+			/* G-EDF with np sections while reading our samples */
+			cli();
 
 			/* ok, this is a new job. Get info from kernel */
 
@@ -208,9 +212,20 @@ int main(int argc, char **argv)
 				data_count = (data_count+1) % DATAPOINTS;
 			}
 
+			/* C, H, H, now exit the NP section
+			 * FIXME this is a very long np section, we may think
+			 * about splitting it in two: C + H,H
+			 */
+			sti();
+
 		} else if (mem_ptr && mem_ptr_end &&
 			   (curr_sched_count != ctrl->sched_count ||
 			    curr_cpu != ctrl->cpu)) {
+
+			/* we are after a preemption / migration:
+			 * enter NP before reading
+			 */
+			cli();
 
 			/* we have done at least one go in the "best case".
 			 * job is the same => preempted / migrated
@@ -243,6 +258,9 @@ int main(int argc, char **argv)
                         else
                                 /* okay */
                                 data_points[data_count].access_type = 'P';
+
+			/* exit NP now */
+			sti();
 
                         data_points[data_count].access_time =
                                                         end_time - start_time;
