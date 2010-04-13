@@ -47,6 +47,8 @@ INCLUDE_ARCH = {
 }
 
 INCLUDE_DIRS = [
+    # cpmd headers
+    'include/',
     # library headers
     '${LIBLITMUS}/include/',
     # Linux kernel headers
