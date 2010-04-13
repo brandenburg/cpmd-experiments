@@ -191,7 +191,7 @@ pmpy.Replace(LINKFLAGS = '')
 # Preemption and migration overhead analysis
 
 pmrt.Program('pm_task', ['bin/pm_task.c', 'bin/pm_common.c'])
-
+pmrt.Program('pm_polluter', ['bin/pm_polluter.c', 'bin/pm_common.c'])
 # #####################################################################
 # Additional Help
 
