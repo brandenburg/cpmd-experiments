@@ -52,7 +52,9 @@ INCLUDE_DIRS = [
     # Linux kernel headers
     '${LITMUS_KERNEL}/include/',
     # Linux architecture-specific kernel headers
-    '${LITMUS_KERNEL}/arch/${INCLUDE_ARCH}/include'
+    '${LITMUS_KERNEL}/arch/${INCLUDE_ARCH}/include',
+    # Python headers
+    '${PYTHON_HEADERS}'
     ]
 
 # #####################################################################
@@ -68,6 +70,10 @@ vars.AddVariables(
     PathVariable('LITMUS_KERNEL',
                  'Where to find the LITMUS^RT kernel.',
                  '../litmus2010'),
+
+    PathVariable('PYTHON_HEADERS',
+                 'Where to find Python headers.',
+                 '/usr/include/python2.5'),
 
     EnumVariable('ARCH',
                  'Target architecture.',
@@ -120,6 +126,7 @@ def dump_config(env):
     dump('CPPPATH')
     dump('CCFLAGS')
     dump('LINKFLAGS')
+    dump('PYTHON_HEADERS')
 
 if GetOption('dump'):
     print "\n"
@@ -161,6 +168,10 @@ if not (env.GetOption('clean') or env.GetOption('help')):
         abort("Cannot find liblitmus headers in '$LIBLITMUS'",
               "Please ensure that LIBLITMUS in .config is a valid path'")
 
+    conf.CheckCHeader('Python.h') or \
+        abort("Cannot find Python headers in '$PYTHON_HEADERS'",
+              "Please ensure that PYTHON_HEADERS in .config is set to a valid path.")
+
     env = conf.Finish()
 
 # #####################################################################
@@ -192,6 +203,10 @@ pmpy.Replace(LINKFLAGS = '')
 
 pmrt.Program('pm_task', ['bin/pm_task.c', 'bin/pm_common.c'])
 pmrt.Program('pm_polluter', ['bin/pm_polluter.c', 'bin/pm_common.c'])
+
+pmpy.SharedLibrary('pm', ['c2python/pmmodule.c', 'bin/pm_common.c'])
+
+Command("pm.so", "libpm.so", Move("$TARGET", "$SOURCE"))
 # #####################################################################
 # Additional Help
 
