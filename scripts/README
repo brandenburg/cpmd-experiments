@@ -1,0 +1,24 @@
+This directory contains some scripts used for bug hunting, general testing
+of Litmus and LibLitmus, Preemption and Migration overhead measurements etc.
+
+When you add a script, please also add a brief description of the script here.
+
+pm_test_script:
+	main preemption and migration testing script; can iterate on
+	multiple WSS and multiple plugins. Some assumtion on filenames and
+	taskset filenames are made. More information direcly in the script.
+
+pm_test_single_taskset*:
+	preemption and migration test scripts. Mainly for debugging / bug hunting
+
+test_find:
+	test script which spawns "find" tasks (which suspend frequently).
+	Mainly for debugging / bug hunting
+
+uni1_050_0.ts:
+	taskset used by pm_test_single_taskset* and test_find (this ts is one of the
+	smallest ts used by John and Bjoern for preemption and migration evaluation
+	on Niagara
+
+test_get_arrays.py:
+	simple python test to verify C to Python PM interface

@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# pm_test_script:
+#	Batch script for running (all?) pm benchmarking experiments.
+#	Run it as root!
+#
+#	Original script by John Calandrino 2008
+#	Changes by Andrea Bastoni 2010
+#
+# Distribution A can be in "PFAIR" "GSN-EDF" "C-EDF" "PSN-EDF";
+
+launchpolluter()
+{
+	NCPU=`cat /sys/devices/system/cpu/present | cut -d - -f 2`
+
+	for i in `seq 0 $NCPU`;
+	do
+		taskset -pc $i ./pm_polluter &
+	done
+}
+
+run_taskset()
+{
+	rm -f curr_taskset
+	cat $1 | sed "s/task //" | sed "s/\#.*//" | sed "/^$/d" >> curr_taskset
+	# Read task set from some source and start all tasks.
+	TASK=0
+	while read inputline;
+	do
+		e=`echo $inputline | awk -F' ' '{print $1}'`
+		p=`echo $inputline | awk -F' ' '{print $2}'`
+		./rt_launch -w $e $p ./pm_task "./$2/res_plugin=`expr $A`_wss=`expr $W`_tss=`expr $X`_`expr $Y`_`expr $TASK`.raw"
+		TASK=`expr $TASK + 1`
+	done < ./curr_taskset
+	echo "($A, $W, $X, $Y)"
+	# try to see if this solves the problem of the task which is not released at every run
+	# speculation: not properly set up when release put it in the queue
+	sleep 5
+	./release_ts -d 3000
+	# launchpolluter
+	# Sleep for 150 seconds. This includes ~60 seconds
+	# of run time followed by 90 seconds of "tear down" time. (to save files)
+	# NOTE: may need to sleep longer than this...
+	sleep 150
+	sync
+	# killall pm_be_polluter
+	# sleep 2
+	killall pm_task
+	sleep 1
+	killall rt_launch
+}
+
+for A in "GSN-EDF";
+do
+	echo "Setting plugin $A..."
+	./setsched $A
+	sleep 1
+
+	for W in 1024;
+	do
+		echo "Experiments for WSS of `expr $W`KB"
+		scons ARCH=x86_64 WSS=$W
+		sleep 1
+
+		SET1=$(echo `seq 10 10 40`)
+		SET2=$(echo `seq 50 25 125`)
+		SET3=$(echo `seq 150 50 250`)
+		for X in $SET1 $SET2 $SET3; # Number of tasks
+		do
+			for Y in `seq 0 9`; # Taskset number
+			do
+				run_taskset "`expr ../$A`-ts/ts-uni_light-`expr $X`-`expr $Y`.ts" "pm_raw_results"
+			done
+		done
+        done
+	DATE=`date +%Y%m%d-%H%M`
+	mkdir pm_raw_results/$DATE
+	mv pm_raw_results/*.raw pm_raw_results/$DATE
+done

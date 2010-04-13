@@ -1,0 +1,8 @@
+#!/bin/bash
+for i in `seq 0 100` ; do
+		echo -n "$i) ";
+		./test_single_taskset ;
+		sleep 20;
+		cat res-*.bin >> result-all-$i.bin
+done
+
