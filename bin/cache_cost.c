@@ -11,7 +11,7 @@
 #include <sys/utsname.h>
 
 #include "litmus.h"
-#include "asm.h"
+#include "asm/cycles.h"
 
 static void die(char *error)
 {
@@ -126,6 +126,8 @@ static int touch_mem(int *mem, int wss, int write_cycle)
 	return sum;
 }
 
+
+
 static void do_random_experiment(FILE* outfile,
 				 int num_cpus, int wss,
 				 int sleep_min, int sleep_max,
@@ -145,15 +147,18 @@ static void do_random_experiment(FILE* outfile,
 	/* prefault and dirty cache */
 	touch_arena();
 
-
+#if defined(__i386__) || defined(__x86_64__)
 	iopl(3);
+#endif
 	while (!sample_count || sample_count >= counter) {
 		delay = sleep_min + random() % (sleep_max - sleep_min + 1);
 		next_cpu = random() % num_cpus;
 
 		mem = allocate(wss);
 
+#if defined(__i386__) || defined(__x86_64__)
 		cli();
+#endif
 		start = get_cycles();
 		mem[0] = touch_mem(mem, wss, write_cycle);
 		stop  = get_cycles();
@@ -173,16 +178,21 @@ static void do_random_experiment(FILE* outfile,
 		mem[0] = touch_mem(mem, wss, write_cycle);
 		stop  = get_cycles();
 		hot3 = stop - start;
+#if defined(__i386__) || defined(__x86_64__)
 		sti();
-
+#endif
 		migrate_to(next_cpu);
 		sleep_us(delay);
 
+#if defined(__i386__) || defined(__x86_64__)
 		cli();
+#endif
 		start = get_cycles();
 		mem[0] = touch_mem(mem, wss, write_cycle);
 		stop  = get_cycles();
+#if defined(__i386__) || defined(__x86_64__)
 		sti();
+#endif
 		after_resume = stop - start;
 
 		/* run, write ratio, wss, delay, from, to, cold, hot1, hot2,
