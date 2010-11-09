@@ -13,6 +13,11 @@
 #include "litmus.h"
 #include "asm/cycles.h"
 
+#if defined(__i386__) || defined(__x86_64__)
+#include "asm/irq.h"
+#endif
+
+
 static void die(char *error)
 {
 	fprintf(stderr, "Error: %s (errno: %m)\n",
