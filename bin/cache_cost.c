@@ -138,7 +138,9 @@ static void do_random_experiment(FILE* outfile,
 				 int sleep_min, int sleep_max,
 				 int write_cycle, int sample_count)
 {
-	int last_cpu, next_cpu, delay;
+	int last_cpu, next_cpu, delay, show = 1;
+	unsigned long preempt_counter = 0;
+	unsigned long migration_counter = 0;
 	unsigned long counter = 1;
 
 	cycles_t start, stop;
@@ -155,9 +157,16 @@ static void do_random_experiment(FILE* outfile,
 #if defined(__i386__) || defined(__x86_64__)
 	iopl(3);
 #endif
-	while (!sample_count || sample_count >= counter) {
+	while (!sample_count ||
+	       sample_count >= preempt_counter ||
+	       sample_count >= migration_counter) {
+
 		delay = sleep_min + random() % (sleep_max - sleep_min + 1);
 		next_cpu = random() % num_cpus;
+
+		if (sample_count)
+			show = (next_cpu == last_cpu && sample_count >= preempt_counter) ||
+				(next_cpu != last_cpu && sample_count >= migration_counter);
 
 		mem = allocate(wss);
 
@@ -200,18 +209,25 @@ static void do_random_experiment(FILE* outfile,
 #endif
 		after_resume = stop - start;
 
+
 		/* run, write ratio, wss, delay, from, to, cold, hot1, hot2,
 		 * hot3, after_resume */
-		fprintf(outfile,
-			"%6ld, %3d, %6d, %6d, %3d, %3d, "
-			"%" CYCLES_FMT ", "
-			"%" CYCLES_FMT ", "
-			"%" CYCLES_FMT ", "
-			"%" CYCLES_FMT ", "
-			"%" CYCLES_FMT "\n",
-			counter++, write_cycle,
-			wss, delay, last_cpu, next_cpu, cold, hot1, hot2, hot3,
-			after_resume);
+		if (show)
+			fprintf(outfile,
+				"%6ld, %3d, %6d, %6d, %3d, %3d, "
+				"%" CYCLES_FMT ", "
+				"%" CYCLES_FMT ", "
+				"%" CYCLES_FMT ", "
+				"%" CYCLES_FMT ", "
+				"%" CYCLES_FMT "\n",
+				counter++, write_cycle,
+				wss, delay, last_cpu, next_cpu, cold,
+				hot1, hot2, hot3,
+				after_resume);
+		if (next_cpu == last_cpu)
+			preempt_counter++;
+		else
+			migration_counter++;
 		last_cpu = next_cpu;
 		deallocate(mem);
 	}
