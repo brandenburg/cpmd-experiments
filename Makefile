@@ -15,7 +15,7 @@ vpath %.c bin/
 # ##############################################################################
 # Targets
 
-all = cache_cost
+all = cache_cost memthrash
 
 .PHONY: all clean
 all: ${all}
@@ -24,6 +24,9 @@ clean:
 
 obj-cache_cost = cache_cost.o
 cache_cost: ${obj-cache_cost}
+
+obj-memthrash  = memthrash.o
+memthrash: ${obj-memthrash}
 
 # dependency discovery
 include ${LIBLITMUS}/inc/depend.makefile
