@@ -131,7 +131,18 @@ static int touch_mem(int *mem, int wss, int write_cycle)
 	return sum;
 }
 
-
+static int pick_cpu(int last_cpu, int num_cpus)
+{
+	int cpu;
+	if (random() % 2 == 0)
+		return last_cpu; /* preemption */
+	else {
+		do {
+			cpu = random() % num_cpus;
+		} while (cpu == last_cpu);
+		return cpu;
+	}
+}
 
 static void do_random_experiment(FILE* outfile,
 				 int num_cpus, int wss,
@@ -162,7 +173,7 @@ static void do_random_experiment(FILE* outfile,
 	       sample_count >= migration_counter) {
 
 		delay = sleep_min + random() % (sleep_max - sleep_min + 1);
-		next_cpu = random() % num_cpus;
+		next_cpu = pick_cpu(last_cpu, num_cpus);
 
 		if (sample_count)
 			show = (next_cpu == last_cpu && sample_count >= preempt_counter) ||
