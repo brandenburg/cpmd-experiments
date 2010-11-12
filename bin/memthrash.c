@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 		for (i = 0; i < NUM_VARS; i++)
 			sum += (i % 2 ? 1 : -1) * data[i];
 		for (i = NUM_VARS - 1; i >= 0; i--)
-			sum += (i % 2 ? -1 : 1) /  data[i];
+			sum += (i % 2 ? -1 : 1) * 100  /  (data[i] ? data[i] : 1);
 		if (argc > 1)
 			printf("sum: %ld\n", sum);
 	}
