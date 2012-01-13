@@ -4,7 +4,7 @@
 # user variables can be specified in the environment or in a .config file
 -include .config
 
-LIBLITMUS ?= ../liblitmus2010
+LIBLITMUS ?= ../liblitmus
 
 # Include default configuration from liblitmus
 include ${LIBLITMUS}/inc/config.makefile
