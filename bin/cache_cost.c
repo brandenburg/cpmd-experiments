@@ -9,6 +9,7 @@
 
 #include <sys/io.h>
 #include <sys/utsname.h>
+#include <sys/sysinfo.h>
 
 #include "litmus.h"
 #include "asm/cycles.h"
@@ -134,7 +135,7 @@ static int touch_mem(int *mem, int wss, int write_cycle)
 static int pick_cpu(int last_cpu, int num_cpus)
 {
 	int cpu;
-	if (random() % 2 == 0)
+	if (num_cpus == 1 || random() % 2 == 0)
 		return last_cpu; /* preemption */
 	else {
 		do {
@@ -170,7 +171,7 @@ static void do_random_experiment(FILE* outfile,
 #endif
 	while (!sample_count ||
 	       sample_count >= preempt_counter ||
-	       sample_count >= migration_counter) {
+	       (num_cpus > 1 && sample_count >= migration_counter)) {
 
 		delay = sleep_min + random() % (sleep_max - sleep_min + 1);
 		next_cpu = pick_cpu(last_cpu, num_cpus);
@@ -251,8 +252,20 @@ static void on_sigalarm(int signo)
 }
 
 static void usage(char *error) {
-	/* TODO: actually provide usage instructions */
-	die(error);
+	fprintf(stderr, "Error: %s\n", error);
+	fprintf(stderr,
+		"Usage: cache_cost [-m PROCS] [-w WRITECYCLE] [-s WSS] [-x MINIMUM SLEEP TIME] [-y MAXIMUM SLEEP TIME] [-n] [-c SAMPLES] [-l DURATION] [-o FILENAME]\n"
+                "Options are:\n"
+		"       -m: Enable migrations among the first PROCS processors. -m2 means migrations between processors 0 and 1. Ommit for considering only preemptions.\n"
+		"       -w: (1/WRITECYCLE) is the proportion of writes, i.e. WRITECYCLE = 3 means that 1/3 of the operations are writes. Use 0 for read-only.\n"
+		"       -s: WSS size in kB.\n"
+		"       -x: Minimum sleep time between preemptions/migrations.\n"
+		"       -y: Maximum sleep time between preemptions/migrations.\n"
+		"       -n: Automatically name output files.\n"
+		"       -c: Number of generated samples of preemptions and migrations.\n"
+		"       -l: Duration of the execution in seconds.\n"
+		"       -o: Name of output file.\n");
+	exit(1);
 }
 
 
@@ -272,6 +285,8 @@ int main(int argc, char** argv)
 	int auto_name_file = 0;
 	int sample_count = 0;
 	int opt;
+
+	srand (time(NULL));
 
 	while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
 		switch (opt) {
