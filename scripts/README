@@ -22,3 +22,43 @@ uni1_050_0.ts:
 
 test_get_arrays.py:
 	simple python test to verify C to Python PM interface
+
+build_cpmd_model.py:
+
+	1) Please edit the following in scripts/cpmd_params.py:
+
+		CLOCK -> Clock in MHz of the processors (for cycles to time conversion)
+
+		host -> Name of the host
+
+		wss_values -> List of WSS values to be tested (in KB)
+		writecycle_values -> List of write factors. [2,3,4] means 1/2, 1/3, 1/4.
+		sleep_values -> Intervals of sleeping time. Add more pairs to the list if you want.
+		samples -> Number of replications
+
+		topo = CacheTopology() -> IMPORTANT! This is the cache topology of the architecture used in the experiment. 
+		Leave it as it is if you generate the CPMD model in the same machine in which the traces were collected.
+
+	2) Run build_cpmd_model.py. Its main() calls three functions:
+
+		obtain_traces(): Runs cachecost.c to collect CPMD traces. MAKE SURE THE PARAMETER topo = CacheTopology()!
+
+		group_traces(): Group all trace replications by the type of migration/WSS. The results are saved in completed/ directory.
+
+		remove_outliers_and_create_model(): Reads completed/ to estimate and generate CPMD model. The results are saved in model/.
+
+		For group_traces() and remove_outliers_and_create_model(), you can use a different topology file. For example if you are generating the model in another computer, you 				need only to have the results/traces/ directory with the collected traces and the topology file of the architecture used in the experiment.
+		In that case, you should comment obtain_traces() and put something like topo = CacheTopology(ExperimentArch.topo).
+
+	3) After obtaining the model files, you can run scripts/export_overheads.py. It applies the "monotonic increasing" restriction to the data and create CPMD files for each type 			of migration.
+
+		The files are exported by Python's pickle. They contain a dicionary that maps WSS size to CPMD cost (in milliseconds, Litmus quantum size).
+		They can be imported like this:
+
+		$ python
+
+		>>> ovfile = open('path/to/PREEMPTION.ovset', 'r')
+		>>> preemption = pickle.load(ovfile)
+		>>> ovfile.close()
+
+		>>>print preemption[256] # Prints the worst-case cost of a preemption in a WSS=256KB scenario
