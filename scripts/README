@@ -65,6 +65,8 @@ build_cpmd_model.py:
 		that case, you should comment obtain_traces() and put something
 		like topo = CacheTopology(ExperimentArch.topo).
 
+		The resulting delays are given in milliseconds.
+
 	3) After obtaining the model files, you can run
   	   scripts/export_overheads.py. It applies the "monotonic increasing"
   	   restriction to the data and create CPMD files for each type of

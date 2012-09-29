@@ -137,7 +137,20 @@ def remove_outliers_and_create_model():
             output['maximum_cutoff'] = cycles_to_ms(maxcutoff)
             output['minimum_cutoff'] = cycles_to_ms(mincutoff)
 
-            outputfile.write('%s\t%d\t%d\t%d\t%.12e\t%.12e\t%.12e\t%.12e\t%.12e\t%.12e\t%.12e\t%.12e\n' % (output['type'],  int(output['wss']), output['number_of_samples'], output['number_of_filtered_samples'], output['maximum_overhead'], output['average_overhead'], output['minimum_overhead'], output['median_overhead'], output['standard_deviation'], output['variance'], output['maximum_cutoff'], output['minimum_cutoff']))
+            outputfile.write('%s\t%d\t%d\t%d\t%.12e\t%.12e\t%.12e\t%.12e' +
+                             '\t%.12e\t%.12e\t%.12e\t%.12e\n'
+                             % (output['type'],
+                                int(output['wss']),
+                                output['number_of_samples'],
+                                output['number_of_filtered_samples'],
+                                output['maximum_overhead'],
+                                output['average_overhead'],
+                                output['minimum_overhead'],
+                                output['median_overhead'],
+                                output['standard_deviation'],
+                                output['variance'],
+                                output['maximum_cutoff'],
+                                output['minimum_cutoff']))
 
         outputfile.close()
 
