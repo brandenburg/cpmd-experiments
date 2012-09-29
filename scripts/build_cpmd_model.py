@@ -51,7 +51,7 @@ def group_traces():
             except IOError as (msg):
                 raise IOError("Could not write output file '%s': %s" % (path.join(COMPLETED_DIR, output_name), msg))
 
-        # Read trace files and separate lines in files according to the migration type 
+        # Read trace files and separate lines in files according to the migration type
         for trace_file in trace_files[wss]:
             try:
                 f = open(path.join(TRACES_DIR, trace_file), 'r')

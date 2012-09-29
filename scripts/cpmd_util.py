@@ -26,7 +26,7 @@ def decode(name):
     return params
 
 def get_config(fname):
-    return path.splitext(path.basename(fname))[0]  
+    return path.splitext(path.basename(fname))[0]
 
 def organize_by_wss(path):
     trace_files = {}
@@ -91,9 +91,9 @@ def apply_iqr(seq, extent = 1.5):
     q3 =  scoreatpercentile(seq, 75)
     iqr = q3 - q1
 
-    start = 0 
+    start = 0
     end = len(seq) - 1
-        
+
     l = find_lt(seq, q1 - extent*iqr) # Rightmost element to exclude
     if l is not None:
         start = l + 1
