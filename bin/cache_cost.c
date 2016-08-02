@@ -1,3 +1,4 @@
+#define _GNU_SOURCE /* for sched_setaffinity */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -11,11 +12,11 @@
 #include <sys/utsname.h>
 #include <sys/sysinfo.h>
 
-#include "litmus.h"
-#include "asm/cycles.h"
-
 #if defined(__i386__) || defined(__x86_64__)
-#include "asm/irq.h"
+#include "x86-cycles.h"
+#include "x86-irq.h"
+#else
+#error unsupported architecture
 #endif
 
 
@@ -26,12 +27,48 @@ static void die(char *error)
 	exit(1);
 }
 
+static int num_online_cpus()
+{
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+int linux_migrate_to(int target_cpu)
+{
+	cpu_set_t *cpu_set;
+	size_t sz;
+	int num_cpus;
+	int ret;
+
+	if (target_cpu < 0)
+		return -1;
+
+	num_cpus = num_online_cpus();
+	if (num_cpus == -1)
+		return -1;
+
+	if (target_cpu >= num_cpus)
+		return -1;
+
+	cpu_set = CPU_ALLOC(num_cpus);
+	sz = CPU_ALLOC_SIZE(num_cpus);
+	CPU_ZERO_S(sz, cpu_set);
+	CPU_SET_S(target_cpu, sz, cpu_set);
+
+	/* apply to caller */
+	ret = sched_setaffinity(getpid(), sz, cpu_set);
+
+	CPU_FREE(cpu_set);
+
+	return ret;
+}
+
+
 static int check_migrations(int num_cpus)
 {
 	int cpu, err;
 
 	for (cpu = 0; cpu < num_cpus; cpu++) {
-		err = be_migrate_to(cpu);
+		err = linux_migrate_to(cpu);
 		if (err != 0) {
 			fprintf(stderr, "Migration to CPU %d failed: %m.\n",
 				cpu + 1);
@@ -99,7 +136,7 @@ static void deallocate(int *mem)
 
 static void migrate_to(int target)
 {
-	if (be_migrate_to(target) != 0)
+	if (linux_migrate_to(target) != 0)
 		die("migration failed");
 }
 
