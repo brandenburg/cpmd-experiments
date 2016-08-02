@@ -204,8 +204,18 @@ static void do_random_experiment(FILE* outfile,
 	touch_arena();
 
 #if defined(__i386__) || defined(__x86_64__)
-	iopl(3);
+	if (!best_effort)
+		iopl(3);
 #endif
+
+	fprintf(outfile,
+		"# %5s, %6s, %6s, %6s, %3s, %3s, "
+		"%10s, %10s, %10s, %10s, %10s\n",
+		"COUNT", "WCYCLE",
+		"WSS", "DELAY", "SRC", "TGT", "COLD",
+		"HOT1", "HOT2", "HOT3", "WITH-CPMD");
+
+
 	while (!sample_count ||
 	       sample_count >= preempt_counter ||
 	       (num_cpus > 1 && sample_count >= migration_counter)) {
@@ -263,12 +273,12 @@ static void do_random_experiment(FILE* outfile,
 		 * hot3, after_resume */
 		if (show)
 			fprintf(outfile,
-				"%6ld, %3d, %6d, %6d, %3d, %3d, "
-				"%" CYCLES_FMT ", "
-				"%" CYCLES_FMT ", "
-				"%" CYCLES_FMT ", "
-				"%" CYCLES_FMT ", "
-				"%" CYCLES_FMT "\n",
+				" %6ld, %6d, %6d, %6d, %3d, %3d, "
+				"%10" CYCLES_FMT ", "
+				"%10" CYCLES_FMT ", "
+				"%10" CYCLES_FMT ", "
+				"%10" CYCLES_FMT ", "
+				"%10" CYCLES_FMT "\n",
 				counter++, write_cycle,
 				wss, delay, last_cpu, next_cpu, cold,
 				hot1, hot2, hot3,
