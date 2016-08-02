@@ -3,7 +3,9 @@
 
 #include <time.h>
 
-#define NUM_VARS 5000000
+#define FOOTPRINT_MB 512
+#define LONGS_IN_1KB (1024 / sizeof(long))
+#define NUM_VARS (LONGS_IN_1KB * 1024 * FOOTPRINT_MB)
 
 long data[NUM_VARS];
 
