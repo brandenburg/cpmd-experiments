@@ -87,7 +87,7 @@ static int become_posix_realtime_task(void)
 }
 
 /* must be larger than the largest cache in the system */
-#define ARENA_SIZE_MB 128
+#define ARENA_SIZE_MB 1024
 #define INTS_IN_1KB (1024 / sizeof(int))
 #define ARENA_SIZE (INTS_IN_1KB * 1024 * ARENA_SIZE_MB)
 static int page_idx = 0;
