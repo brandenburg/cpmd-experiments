@@ -185,7 +185,8 @@ static int pick_cpu(int last_cpu, int num_cpus)
 static void do_random_experiment(FILE* outfile,
 				 int num_cpus, int wss,
 				 int sleep_min, int sleep_max,
-				 int write_cycle, int sample_count)
+				 int write_cycle, int sample_count,
+				 int best_effort)
 {
 	int last_cpu, next_cpu, delay, show = 1;
 	unsigned long preempt_counter = 0;
@@ -230,7 +231,8 @@ static void do_random_experiment(FILE* outfile,
 		mem = allocate(wss);
 
 #if defined(__i386__) || defined(__x86_64__)
-		cli();
+		if (!best_effort)
+			cli();
 #endif
 		start = get_cycles();
 		mem[0] = touch_mem(mem, wss, write_cycle);
@@ -252,19 +254,22 @@ static void do_random_experiment(FILE* outfile,
 		stop  = get_cycles();
 		hot3 = stop - start;
 #if defined(__i386__) || defined(__x86_64__)
-		sti();
+		if (!best_effort)
+			sti();
 #endif
 		migrate_to(next_cpu);
 		sleep_us(delay);
 
 #if defined(__i386__) || defined(__x86_64__)
-		cli();
+		if (!best_effort)
+			cli();
 #endif
 		start = get_cycles();
 		mem[0] = touch_mem(mem, wss, write_cycle);
 		stop  = get_cycles();
 #if defined(__i386__) || defined(__x86_64__)
-		sti();
+		if (!best_effort)
+			sti();
 #endif
 		after_resume = stop - start;
 
@@ -307,6 +312,7 @@ static void usage(char *error) {
 "                  [-y MAXIMUM SLEEP TIME] [-n] [-c SAMPLES] [-l DURATION] \n"
 "                  [-o FILENAME]\n"
 "Options:\n"
+"       -b: Run as a best-effort task (for debugging, NOT for measurements)\n"
 "       -m: Enable migrations among the first PROCS processors. \n"
 "           Example: -m2 means migrations between processors 0 and 1. \n"
 "           Omit to consider only preemptions.\n"
@@ -325,7 +331,7 @@ static void usage(char *error) {
 }
 
 
-#define OPTSTR "m:w:l:s:o:x:y:nc:h"
+#define OPTSTR "m:w:l:s:o:x:y:nc:hb"
 
 int main(int argc, char** argv)
 {
@@ -341,6 +347,7 @@ int main(int argc, char** argv)
 	int auto_name_file = 0;
 	int sample_count = 0;
 	int opt;
+	int best_effort = 0;
 
 	srand (time(NULL));
 
@@ -375,6 +382,9 @@ int main(int argc, char** argv)
 		case 'y':
 			sleep_max = atoi(optarg);
 			break;
+		case 'b':
+			best_effort = 1;
+			break;
 		case 'h':
 			usage(NULL);
 			break;
@@ -406,10 +416,10 @@ int main(int argc, char** argv)
 	if (check_migrations(num_cpus) != 0)
 		usage("Invalid CPU range.");
 
-	if (become_posix_realtime_task() != 0)
+	if (!best_effort && become_posix_realtime_task() != 0)
 		die("Could not become real-time task.");
 
-	if (lock_memory() != 0)
+	if (!best_effort && lock_memory() != 0)
 		die("Could not lock memory.");
 
 	if (auto_name_file) {
@@ -429,10 +439,16 @@ int main(int argc, char** argv)
 		alarm(exit_after);
 	}
 
+	if (best_effort) {
+		fprintf(out, "\n[!!!] WARNING: running in best-effort mode "
+		             "=> all measurements are unreliable!\n\n");
+	}
+
 	do_random_experiment(out,
 			     num_cpus, wss, sleep_min,
 			     sleep_max, write_cycle,
-			     sample_count);
+			     sample_count,
+			     best_effort);
 	fclose(out);
 	return 0;
 }
