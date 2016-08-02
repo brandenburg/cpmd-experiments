@@ -397,7 +397,7 @@ int main(int argc, char** argv)
 		usage("Invalid CPU range.");
 
 	if (become_posix_realtime_task() != 0)
-		die("Could not become realt-time task.");
+		die("Could not become real-time task.");
 
 	if (lock_memory() != 0)
 		die("Could not lock memory.");
