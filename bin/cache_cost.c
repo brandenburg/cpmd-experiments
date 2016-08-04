@@ -340,6 +340,7 @@ static void usage(char *error) {
 "Usage: cache_cost [-m PROCS] [-w WRITECYCLE] [-s WSS] [-x MINIMUM SLEEP TIME]\n"
 "                  [-y MAXIMUM SLEEP TIME] [-n] [-c SAMPLES] [-l DURATION] \n"
 "                  [-o FILENAME] [-h] [-b] [-R REPETITIONS]\n"
+"                  [-P PREFIX]\n"
 "Options:\n"
 "       -b: Run as a best-effort task (for debugging, NOT for measurements)\n"
 "       -m: Enable migrations among the first PROCS processors. \n"
@@ -352,6 +353,7 @@ static void usage(char *error) {
 "       -x: Minimum sleep time between preemptions/migrations.\n"
 "       -y: Maximum sleep time between preemptions/migrations.\n"
 "       -n: Automatically name output files.\n"
+"       -P: Prefix automatically generated name with PREFIX.\n"
 "       -c: Number of generated samples of preemptions and migrations.\n"
 "       -l: Duration of the execution in seconds.\n"
 "       -o: Name of output file.\n"
@@ -361,7 +363,7 @@ static void usage(char *error) {
 }
 
 
-#define OPTSTR "m:w:l:s:o:x:y:nc:hbR:"
+#define OPTSTR "m:w:l:s:o:x:y:nc:hbR:P:"
 
 int main(int argc, char** argv)
 {
@@ -373,6 +375,7 @@ int main(int argc, char** argv)
 	int write_cycle = 0; /* every nth cycle is a write; 0 means read-only  */
 	FILE* out = stdout;
 	char fname[255];
+	char *prefix = "pmo";
 	struct utsname utsname;
 	int auto_name_file = 0;
 	int sample_count = 0;
@@ -407,6 +410,9 @@ int main(int argc, char** argv)
 			break;
 		case 'n':
 			auto_name_file = 1;
+			break;
+		case 'P':
+			prefix = optarg;
 			break;
 		case 'x':
 			sleep_min = atoi(optarg);
@@ -462,7 +468,8 @@ int main(int argc, char** argv)
 	if (auto_name_file) {
 		uname(&utsname);
 		snprintf(fname, 255,
-			 "pmo_host=%s_wss=%d_wcycle=%d_smin=%d_smax=%d.csv",
+			 "%s_host=%s_wss=%d_wcycle=%d_smin=%d_smax=%d.csv",
+			 prefix,
 			 utsname.nodename, wss, write_cycle, sleep_min, sleep_max);
 		out = fopen(fname, "w");
 		if (out == NULL) {
