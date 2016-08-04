@@ -24,8 +24,9 @@ all: ${all}
 clean:
 	rm -f ${all} *.o *.d
 
-# obj-cache_cost = cache_cost.o
-# cache_cost: ${obj-cache_cost}
+obj-cache_cost = cache_cost.o pagemap.o
+cache_cost: ${obj-cache_cost}
+
 # 
 # obj-memthrash  = memthrash.o
 # memthrash: ${obj-memthrash}

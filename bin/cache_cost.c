@@ -19,6 +19,7 @@
 #error unsupported architecture
 #endif
 
+#include "pagemap.h"
 
 static void die(char *error)
 {
@@ -188,15 +189,22 @@ static void do_random_experiment(FILE* outfile,
 				 int write_cycle, int sample_count,
 				 int best_effort)
 {
-	int last_cpu, next_cpu, delay, show = 1;
+	int last_cpu, next_cpu, delay, show = 1, i;
 	unsigned long preempt_counter = 0;
 	unsigned long migration_counter = 0;
 	unsigned long counter = 1;
+	unsigned long num_pages = wss / getpagesize();
+	unsigned long *phys_addrs;
 
 	cycles_t start, stop;
 	cycles_t cold, hot1, hot2, hot3, after_resume;
 
 	int *mem;
+
+	if (!num_pages)
+		num_pages = 1;
+
+	phys_addrs = malloc(sizeof(long) * num_pages);
 
 	migrate_to(0);
 	last_cpu = 0;
@@ -210,11 +218,14 @@ static void do_random_experiment(FILE* outfile,
 #endif
 
 	fprintf(outfile,
-		"# %5s, %6s, %6s, %6s, %3s, %3s, "
-		"%10s, %10s, %10s, %10s, %10s\n",
+		"# %5s, %6s, %6s, %6s, %3s, %3s"
+		", %10s, %10s, %10s, %10s, %10s"
+		", %12s, %12s"
+		"\n",
 		"COUNT", "WCYCLE",
 		"WSS", "DELAY", "SRC", "TGT", "COLD",
-		"HOT1", "HOT2", "HOT3", "WITH-CPMD");
+		"HOT1", "HOT2", "HOT3", "WITH-CPMD",
+		"VIRT ADDR", "PHYS ADDR");
 
 
 	while (!sample_count ||
@@ -276,18 +287,29 @@ static void do_random_experiment(FILE* outfile,
 
 		/* run, write ratio, wss, delay, from, to, cold, hot1, hot2,
 		 * hot3, after_resume */
-		if (show)
+		if (show) {
 			fprintf(outfile,
 				" %6ld, %6d, %6d, %6d, %3d, %3d, "
 				"%10" CYCLES_FMT ", "
 				"%10" CYCLES_FMT ", "
 				"%10" CYCLES_FMT ", "
 				"%10" CYCLES_FMT ", "
-				"%10" CYCLES_FMT "\n",
+				"%10" CYCLES_FMT ", "
+				"%12lu",
 				counter++, write_cycle,
 				wss, delay, last_cpu, next_cpu, cold,
 				hot1, hot2, hot3,
-				after_resume);
+				after_resume,
+				(unsigned long) mem);
+			get_phys_addrs(0,
+				(unsigned long) mem,
+				wss * 1024 + (unsigned long) mem,
+				phys_addrs,
+				wss);
+			for (i = 0; i < num_pages; i++)
+				fprintf(outfile, ", %12lu", phys_addrs[i]);
+			fprintf(outfile, "\n");
+		}
 		if (next_cpu == last_cpu)
 			preempt_counter++;
 		else
@@ -295,6 +317,7 @@ static void do_random_experiment(FILE* outfile,
 		last_cpu = next_cpu;
 		deallocate(mem);
 	}
+	free(phys_addrs);
 }
 
 static void on_sigalarm(int signo)
