@@ -339,7 +339,7 @@ static void usage(char *error) {
 	fprintf(stderr,
 "Usage: cache_cost [-m PROCS] [-w WRITECYCLE] [-s WSS] [-x MINIMUM SLEEP TIME]\n"
 "                  [-y MAXIMUM SLEEP TIME] [-n] [-c SAMPLES] [-l DURATION] \n"
-"                  [-o FILENAME]\n"
+"                  [-o FILENAME] [-h] [-b] [-R REPETITIONS]\n"
 "Options:\n"
 "       -b: Run as a best-effort task (for debugging, NOT for measurements)\n"
 "       -m: Enable migrations among the first PROCS processors. \n"
@@ -355,12 +355,13 @@ static void usage(char *error) {
 "       -c: Number of generated samples of preemptions and migrations.\n"
 "       -l: Duration of the execution in seconds.\n"
 "       -o: Name of output file.\n"
+"       -R: repeat the experiment several times\n"
 "       -h: Show this message.\n");
 	exit(1);
 }
 
 
-#define OPTSTR "m:w:l:s:o:x:y:nc:hb"
+#define OPTSTR "m:w:l:s:o:x:y:nc:hbR:"
 
 int main(int argc, char** argv)
 {
@@ -377,6 +378,8 @@ int main(int argc, char** argv)
 	int sample_count = 0;
 	int opt;
 	int best_effort = 0;
+	int repetitions = 1;
+	int i;
 
 	srand (time(NULL));
 
@@ -413,6 +416,11 @@ int main(int argc, char** argv)
 			break;
 		case 'b':
 			best_effort = 1;
+			break;
+		case 'R':
+			repetitions = atoi(optarg);
+			if (repetitions <= 0)
+				usage("invalid number of repetitions");
 			break;
 		case 'h':
 			usage(NULL);
@@ -473,11 +481,13 @@ int main(int argc, char** argv)
 		             "=> all measurements are unreliable!\n\n");
 	}
 
-	do_random_experiment(out,
-			     num_cpus, wss, sleep_min,
-			     sleep_max, write_cycle,
-			     sample_count,
-			     best_effort);
+
+	for (i = 0; i < repetitions; i++)
+		do_random_experiment(out,
+			             num_cpus, wss, sleep_min,
+			             sleep_max, write_cycle,
+			             sample_count,
+			             best_effort);
 	fclose(out);
 	return 0;
 }
