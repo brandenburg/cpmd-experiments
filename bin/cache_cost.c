@@ -106,9 +106,15 @@ static void touch_arena(void) {
 		arena[i] = i;
 }
 
+static int arena_pos = 0;
+
+static void reset_arena(void) {
+	arena_pos = 0;
+	touch_arena();
+}
+
 static int* allocate(int wss)
 {
-	static int pos = 0;
 	int size = wss * INTS_IN_1KB;
 	int *mem;
 
@@ -119,13 +125,13 @@ static int* allocate(int wss)
 	if (size * 2 > ARENA_SIZE)
 		die("static memory arena too small");
 
-	if (pos + size > ARENA_SIZE) {
+	if (arena_pos + size > ARENA_SIZE) {
 		/* wrap to beginning */
 		mem = arena;
-		pos = size;
+		arena_pos = size;
 	} else {
-		mem = arena + pos;
-		pos += size;
+		mem = arena + arena_pos;
+		arena_pos += size;
 	}
 
 	return mem;
@@ -210,7 +216,7 @@ static void do_random_experiment(FILE* outfile,
 	last_cpu = 0;
 
 	/* prefault and dirty cache */
-	touch_arena();
+	reset_arena();
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (!best_effort)
